@@ -1,7 +1,9 @@
 import queue
 import heapq
+import random
 from heapq import heappush, heappop
 from math import inf, radians, cos, sin, asin, sqrt
+
 
 def heuristic(node):
     # Coordenadas de los nodos
@@ -188,6 +190,140 @@ def branch_and_bound_shortest_path(graph, start, end, heuristic_func):
     # Si no se encuentra un camino desde el nodo "start" hasta el nodo "end", devolver None
     return None
 
+# Función de steepest hil climbing
+def steepest_hill_climbing(graph, initial_node):
+    #Verficamos que el nodo actual sea el nodo inicial y si es así se termina la función
+    current_node = initial_node
+    #Creamos un ciclo para que se calcule la heuristica con cada uno de los nodos recurrentes
+    while True:
+        #Calculamos la heuristica para el nodo actual para ver cual es su heuristica y poder compararlo con los vecinos
+        current_score = heuristic(current_node)
+        best_score = current_score
+        best_node = current_node
+        #Calcula la heuristica para cada uno de los vecinos del nodo acual y toma el que tenga 
+        #una heuristica mejor para poderlo tomar como el mejor nodo
+        for neighbor in graph[current_node]:
+            neighbor_score = heuristic(neighbor)
+            if neighbor_score > best_score:
+                best_score = neighbor_score
+                best_node = neighbor
+        # Si es mejor valor es menor o igual que el valor del nodo actual regresa el nodo actual 
+        # porque esa es la mejor opción
+        if best_score <= current_score:
+            return current_node
+        #Sino regresa el nodo actual como el mejor valor
+        current_node = best_node
+
+#Función Stochastic hil clambing
+def stochastic_hill_climbing(graph, initial_node, heuristic):
+    #Verificamos si el nodo actual es el nodo de inicio si es asi el programa termina pero
+    #si no es de este modo se hace una virifcación entre cada uno de los nodos vecinos de forma
+    #aleatoria para poder ver el mejor camino con la mayor heuristica
+    current_node = initial_node
+    while True:
+        #Se hace la heuristica al nodo actual para ver su mejor forma
+        current_score = heuristic(current_node)
+        #Se guarda en una lista los nodos la recorridos por el grafo
+        neighbors = graph[current_node]
+        # random.choices() debe recibir una lista y un valor de peso opcional.
+        # En este caso, no se necesita un valor de peso, por lo que simplemente se
+        # convierte el conjunto de vecinos en una lista antes de pasarla a
+        # random.choices().
+        random_neighbor = random.choices(list(neighbors))[0]
+        neighbor_score = heuristic(random_neighbor)
+        if neighbor_score > current_score:
+            current_node = random_neighbor
+        else:
+            return current_node
+
+
+#Función Genetic Algorithm
+def genetic_algorithm(graph, population_size, num_generations, mutation_rate):
+    population = generate_initial_population(population_size, graph)
+    for generation in range(num_generations):
+        fitness_scores = [fitness_function(chromosome, graph) for chromosome in population]
+        parent1 , parent2 = select_parents(population)
+        offspring = generate_offspring(parent1 , parent2)
+        population = mutate_population(offspring, mutation_rate,graph)
+    best_chromosome = max(population, key=lambda chromosome: fitness_function(chromosome, graph))
+    return best_chromosome
+
+#Función generate_initial_population para realizar el algoritmo de Genetic Algorithm
+#Lo que hace esta función es generar una población de manera aleatoria, esta población es 
+# cada uno de los nodos del grafo, los cuales representan una posible solución del problema,
+# esta función toma cada nodo del grafo y los coloca de modo de un directorio para poder ver la 
+# mejor solución al problema
+def generate_initial_population(population_size, graph):
+    population = []
+    nodes = list(graph.keys())
+    for i in range(population_size):
+        chromosome = random.sample(nodes, len(nodes))
+        population.append(chromosome)
+    return population
+
+#Función de fitness_function para realizar el algoritmo de Genetic Algorithm
+"""Esta función hace la implemnetación de ver que tanta aplitud tiene cada nodo
+ esto quiere decir que ve cuantos vecinos tiene cada uno de los nodos que se ecnuentran
+ en el cromosoma, se busca maximizar los vecinos que son soluciones en el cromosoma"""
+def fitness_function(chromosome, graph):
+    fitness = 0
+    for node in graph:
+        for neighbor in graph[node]:
+            if neighbor in chromosome:
+                fitness += 1
+    return fitness
+
+#Función select_parents para realizar el algoritmo de Genetic Algorithm
+"""La función genera un cruce entre dos padres la cual lo hace de la siguiente manera,
+ toma un candidato y lo que hace es que selecciona un nodo de manera aleatoria para poder 
+ encontrar a un candidato con el mayor fitness, ya cuando tenga el candidato con mayor fitness
+ ese lo toma como padre y este procedimiento lo hace 2 veces para tener los 2 padres y lo 
+ agrega a la lista de mejores andidatos la cual se guarda en padres"""
+def select_parents(population):
+    parent1 = random.choice(population)
+    parent2 = random.choice(population)
+    while parent2 == parent1 and len(population) > 1:
+        parent2 = random.choice(population)
+    return parent1, parent2
+
+#Función generate_offspring para realizar el algoritmo de Genetic Algorithm
+"""Esta función lo que hace es que a partir de los 2 padres crea una desendencia 
+    lo hace a partir de una de las partes de cada uno de los padres para poder 
+    realizar esta desecendia y esto lo hace de la siguiente manera si un número 
+    aleatorio generado al azar es mayor que la tasa de cruce, se clona uno de los 
+    padres como el descendiente sin realizar cruce. Si el número aleatorio es menor 
+    o igual a la tasa de cruce, se selecciona un punto de cruce aleatorio entre 1 y 
+    la longitud del cromosoma menos 1. Luego, se combina la primera parte del primer 
+    padre con la segunda parte del segundo padre a partir del punto de cruce para 
+    formar el descendiente. """
+def generate_offspring(parent1, parent2):
+    if len(parent1) <= 1:  # verificación de longitud de parent1
+        return parent1
+    crossover_point = random.randrange(1, len(parent1))
+    child = parent1[:crossover_point] + parent2[crossover_point:]
+    if random.random() < mutation_rate:
+        mutate_population(child)
+    return child
+#Función mutate_population para realizar el algoritmo de Genetic Algorithm
+"""Esta función lo que hace es generar una mutación en los cromosomas, esto lo hace tomando
+    de forma aleatoria un nodo del cromosoma para poder realizar la mutación, esto se hace 
+    con las siguientes reglas, ya que la función itera a través de cada cromosoma en la población
+    y verifica si se debe aplicar una mutación. Si un número aleatorio generado al azar es menor 
+    o igual a la tasa de mutación (mutation_rate), se realiza la mutación. Se crea una copia del 
+    cromosoma original y se cambia un nodo aleatorio en el cromosoma por otro nodo elegido al azar 
+    del grafo, el cromosoma mutado se agrega a una lista de cromosomas mutados, que se devuelve al 
+    final de la función."""
+def mutate_population(population, mutation_rate, graph):
+    mutated_population = []
+    for chromosome in population:
+        mutated_chromosome = list(chromosome)
+        for i in range(len(chromosome)):
+            if random.random() < mutation_rate:
+                mutated_chromosome[i] = random.choice(list(graph.keys()))
+        mutated_population.append(mutated_chromosome)
+    return mutated_population
+
+
 graph = {
     'A': {'B': 1, 'C': 2},
     'B': {'A': 1, 'C': 1, 'D': 2},
@@ -211,11 +347,13 @@ if visited is not None:
 else:
     print(f"No se pudo encontrar un camino válido desde '{start}' hasta '{goal}'.")
 
+print("----------------------------------------------------------------------------")
 # Ejecutamos el algoritmo A* con peso
 path = weighted_astar(start, goal, heuristic, successors, edge_cost, w=1.5)
 print("Resultado weighted A*")
 print(path)
 
+print("----------------------------------------------------------------------------")
 # Ejecutamos el algoritmo A*
 came_from, cost_so_far = astar(start, goal, graph, heuristic)
 
@@ -235,13 +373,34 @@ else:
     print(" -> ".join(node for node in path))
     #print(f"Costo total: {cost_so_far[goal_node]}")
 
+print("----------------------------------------------------------------------------")
 # Ejecutamos el algoritmo Beam
 result = beam_search(start, lambda n: n == goal, expand_fn, beam_width, goal, heuristic)
 print("Resultado Beam")
 print(result)
 
+print("----------------------------------------------------------------------------")
 # Ejecutamos el algoritmo Branch and Bound
 path, cost = branch_and_bound_shortest_path(graph, start, goal, heuristic)
 print("Resultado de Branch and Bound")
 print("Camino más corto:", path)
 print("Costo total:", cost)
+
+print("----------------------------------------------------------------------------")
+#Ejecución del aloritmo steepest hil climbing
+resultado = steepest_hill_climbing(graph, start)
+print("El resultado de steepest hil climbing")
+print(resultado) 
+
+print("----------------------------------------------------------------------------")
+resultado_stochastic = stochastic_hill_climbing(graph, start, heuristic)
+print("El resultado de Stochastic hil clambing")
+print(resultado_stochastic)
+
+print("----------------------------------------------------------------------------")
+population_size = 100
+num_generations = 50
+mutation_rate = 0.05
+Resultado_genetic = genetic_algorithm(graph, population_size, num_generations, mutation_rate)
+print("El resultado de Genetic Algorithm")
+print(Resultado_genetic)
