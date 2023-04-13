@@ -392,11 +392,13 @@ resultado = steepest_hill_climbing(graph, start)
 print("El resultado de steepest hil climbing")
 print(resultado) 
 
+#Ejecución del algoritmo Stochastic hil clambing
 print("----------------------------------------------------------------------------")
 resultado_stochastic = stochastic_hill_climbing(graph, start, heuristic)
 print("El resultado de Stochastic hil clambing")
 print(resultado_stochastic)
 
+#Ejecución del algoritmo Genetic Algorithm
 print("----------------------------------------------------------------------------")
 population_size = 100
 num_generations = 50
