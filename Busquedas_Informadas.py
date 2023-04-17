@@ -145,7 +145,7 @@ def beam_search(start_state, goal_fn, expand_fn, beam_width, goal, heuristic):
             return None
         print("Beam:", beam) # imprime el haz de búsqueda en cada iteración
 
-#Función de beam
+#Función de  Branch and Bound
 def expand_fn(state):
     return list(graph.get(state, {}).items())
 
@@ -304,6 +304,7 @@ def generate_offspring(parent1, parent2):
     if random.random() < mutation_rate:
         mutate_population(child)
     return child
+
 #Función mutate_population para realizar el algoritmo de Genetic Algorithm
 """Esta función lo que hace es generar una mutación en los cromosomas, esto lo hace tomando
     de forma aleatoria un nodo del cromosoma para poder realizar la mutación, esto se hace 
